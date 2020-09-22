@@ -12,33 +12,82 @@
 
 #include <random>
 
-GLuint hexapod_meshes_for_lit_color_texture_program = 0;
-Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
-	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+//GLuint hexapod_meshes_for_lit_color_texture_program = 0;
+//Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
+//	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
+//	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+//	return ret;
+//});
+//
+//Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
+//	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+//		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
+//
+//		scene.drawables.emplace_back(transform);
+//		Scene::Drawable &drawable = scene.drawables.back();
+//
+//		drawable.pipeline = lit_color_texture_program_pipeline;
+//
+//		drawable.pipeline.vao = hexapod_meshes_for_lit_color_texture_program;
+//		drawable.pipeline.type = mesh.type;
+//		drawable.pipeline.start = mesh.start;
+//		drawable.pipeline.count = mesh.count;
+//
+//	});
+//});
+
+
+GLuint city_meshes_for_lit_color_texture_program = 0;
+Load< MeshBuffer > city_meshes(LoadTagDefault, []() -> MeshBuffer const* {
+	MeshBuffer const* ret = new MeshBuffer(data_path("city.pnct"));
+	city_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
-Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
+Load< Scene > city_scene(LoadTagDefault, []() -> Scene const* {
+	return new Scene(data_path("city.scene"), [&](Scene& scene, Scene::Transform* transform, std::string const& mesh_name) {
+		Mesh const& mesh = city_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
-		Scene::Drawable &drawable = scene.drawables.back();
+		Scene::Drawable& drawable = scene.drawables.back();
 
 		drawable.pipeline = lit_color_texture_program_pipeline;
 
-		drawable.pipeline.vao = hexapod_meshes_for_lit_color_texture_program;
+		drawable.pipeline.vao = city_meshes_for_lit_color_texture_program;
 		drawable.pipeline.type = mesh.type;
 		drawable.pipeline.start = mesh.start;
 		drawable.pipeline.count = mesh.count;
-
+		});
 	});
-});
 
-PlayMode::PlayMode() : scene(*hexapod_scene) {
+GLuint space_meshes_for_lit_color_texture_program = 0;
+Load< MeshBuffer > space_meshes(LoadTagDefault, []() -> MeshBuffer const* {
+	MeshBuffer const* ret = new MeshBuffer(data_path("space.pnct"));
+	space_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
+	return ret;
+	});
+
+Load< Scene > space_scene(LoadTagDefault, []() -> Scene const* {
+	return new Scene(data_path("space.scene"), [&](Scene& scene, Scene::Transform* transform, std::string const& mesh_name) {
+		Mesh const& mesh = space_meshes->lookup(mesh_name);
+
+		scene.drawables.emplace_back(transform);
+		Scene::Drawable& drawable = scene.drawables.back();
+
+		drawable.pipeline = lit_color_texture_program_pipeline;
+
+		drawable.pipeline.vao = space_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type = mesh.type;
+		drawable.pipeline.start = mesh.start;
+		drawable.pipeline.count = mesh.count;
+		});
+	});
+
+
+
+PlayMode::PlayMode() : scene(*space_scene) {//scene(*hexapod_scene) {
 	//get pointers to leg for convenience:
-	for (auto &transform : scene.transforms) {
+	/*for (auto &transform : scene.transforms) {
 		if (transform.name == "Hip.FL") hip = &transform;
 		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
 		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
@@ -49,7 +98,15 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 
 	hip_base_rotation = hip->rotation;
 	upper_leg_base_rotation = upper_leg->rotation;
-	lower_leg_base_rotation = lower_leg->rotation;
+	lower_leg_base_rotation = lower_leg->rotation;*/
+
+	for (auto& transform : scene.transforms) {
+		if (transform.name == "Ship") { ship = &transform; }
+		else if (transform.name.substr(0, 7) == "Asteroid") { asteroids.push_back(&transform); }
+	}
+	if (ship == nullptr) throw std::runtime_error("Ship not found.");
+	if (asteroids.empty() != 1) throw std::runtime_error("Not All Asteroids not found.");
+	
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -81,7 +138,21 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_q) {
+			q.downs += 1;
+			q.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_e) {
+			e.downs += 1;
+			e.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.downs += 1;
+			space.pressed = true;
+			return true;
 		}
+
+
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
 			left.pressed = false;
@@ -94,6 +165,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_q) {
+			q.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_e) {
+			e.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.pressed = false;
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -125,7 +205,7 @@ void PlayMode::update(float elapsed) {
 	wobble += elapsed / 10.0f;
 	wobble -= std::floor(wobble);
 
-	hip->rotation = hip_base_rotation * glm::angleAxis(
+	/*hip->rotation = hip_base_rotation * glm::angleAxis(
 		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
@@ -136,28 +216,90 @@ void PlayMode::update(float elapsed) {
 	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
 		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
 		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
+	);*/
 
 	//move camera:
 	{
 
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 30.0f;
-		glm::vec2 move = glm::vec2(0.0f);
-		if (left.pressed && !right.pressed) move.x =-1.0f;
-		if (!left.pressed && right.pressed) move.x = 1.0f;
-		if (down.pressed && !up.pressed) move.y =-1.0f;
-		if (!down.pressed && up.pressed) move.y = 1.0f;
+		constexpr float PlayerSpeed = 20.0f;
+		constexpr float Magic = .5f;
+		constexpr float rMag = 8.0f;
+		glm::vec3 cam_move = glm::vec3(0.0f);
+		glm::vec3 rot = glm::vec3(0.0f);
+		glm::vec3 ship_move = glm::vec3(0.0f);
+		if (left.pressed && !right.pressed) cam_move.x =-1.0f;
+		if (!left.pressed && right.pressed) cam_move.x = 1.0f;
+		if (down.pressed && !up.pressed) cam_move.y =-1.0f;
+		if (!down.pressed && up.pressed) cam_move.y = 1.0f;
+		if (e.pressed) {
+			//ship_move.x = -1.0f;
+			rot.z = 1.0f;
+		}
+		if (q.pressed) {
+			//ship_move.x = 1.0f;
+			rot.z = -1.0f;
+		}
+		if (space.pressed) {
+			ship->position = glm::vec3(.0f, .0f, 8.0f);
+			ship->rotation = glm::angleAxis(.0f, glm::vec3(.0f));
+		}
+
+		ship_move.y = -1.0f;
+		//rot.x = -1.0f;
+		//float theta = .0f;
+		//rot = glm::vec3(glm::cos(theta), glm::sin(theta), 0.0f);
 
 		//make it so that moving diagonally doesn't go faster:
-		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
+		if (cam_move != glm::vec3(0.0f)) cam_move = glm::normalize(cam_move) * PlayerSpeed * elapsed;
+		if (ship_move != glm::vec3(0.0f)) ship_move = glm::normalize(ship_move) * PlayerSpeed * elapsed;
+
+		glm::mat4x3 ship_frame = ship->make_local_to_world();
+		glm::vec3 ship_right = ship_frame[0];
+		glm::vec3 ship_up = ship_frame[1];
+		glm::vec3 ship_forward = -ship_frame[2];
+		ship->position += ship_move.x * ship_right + ship_move.y * ship_forward + ship_move.z * ship_up;
+		std::cout << ship->position.x << " +++ " << ship->position.y << " --- " << ship->position.z << "\n";
+		std::cout << glm::acos(ship->position.x / glm::length(glm::vec2(ship->position.x, ship->position.z))) << "\n";
+		float hpi = 1.570796f;
+		std::cout << "FUCK\n";
+		float x_theta = glm::acos(ship->position.y / glm::length(glm::vec2(ship->position.y, ship->position.z)));
+		if (ship->position.z < 0) {
+			x_theta = std::abs(x_theta - 3.1415926f) + 3.1415926f;
+		}
+		float y_theta = glm::acos(ship->position.x / glm::length(glm::vec2(ship->position.x, ship->position.z))) - hpi;
+		/*if (ship->position.z < 0) {
+			y_theta = std::abs(y_theta - 3.1415926f) + 3.1415926f;
+		}*/
+		float z_theta = glm::acos(ship->position.y / glm::length(glm::vec2(ship->position.x, ship->position.y)));
+		if (ship->position.x < 0) {
+			z_theta = std::abs(z_theta - 3.1415926f) + 3.1415926f;
+		}
+		
+		std::cout << x_theta << "xtheta\n";
+		std::cout << y_theta << "ytheta\n";
+		//Following math based on https://www.gamedev.net/forums/topic/625169-how-to-use-a-quaternion-as-a-camera-orientation/
+		glm::quat x_quat = glm::angleAxis(x_theta, glm::vec3(1.0f, .0f, .0f));
+		glm::quat y_quat = glm::angleAxis(y_theta, glm::vec3(.0f, 1.0f, .0f));
+		glm::quat z_quat = glm::angleAxis(rot.z * elapsed * PlayerSpeed, glm::vec3(.0f, .0f, 1.0f));
+		if (rot.z != 0) { std::cout << rot.z << "rotating manually!!\n"; }
+		ship->rotation = x_quat * y_quat * z_quat;
+		//ship->position += glm::vec3(rMag * glm::cos(theta) * elapsed * PlayerSpeed, rMag * glm::sin(theta) * elapsed * PlayerSpeed, .0f);
+		std::cout << ship->rotation.w <<" rotate\n";
+		if (ship->rotation.w == 1 && ship->position.y == 0) {
+			ship->position.y += 2.0f;
+			std::cout << "HIT\n";
+		}
+		ship->position = glm::normalize(ship->position) * rMag;
 
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
 		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
+		glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
 
-		camera->transform->position += move.x * right + move.y * forward;
+		//camera->transform->position = ship->position + glm::vec3(.0f, -1.0f, 1.0f);
+		camera->transform->position += cam_move.x * right + cam_move.y * forward;// +cam_move.z * up;
+		
 	}
 
 	//reset button press counters:

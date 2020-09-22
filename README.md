@@ -1,8 +1,9 @@
-# (TODO: your game's title)
+# a sad and disappointing asteroid game
 
-Author: (TODO: your name)
+Author: ppwilson
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: Intended: an infinite runner version of Asteroids, unable to stop, you have to continually dodge asteroids as you are stuck in a planet's gravity well.
+		Actual: An infinite runner
 
 Screen Shot:
 
@@ -10,9 +11,9 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+Space to reset, q and e to move side to side, but most recent update broke that
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: me
 
 This game was built with [NEST](NEST.md).
 
