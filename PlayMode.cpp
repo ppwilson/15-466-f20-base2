@@ -232,6 +232,7 @@ void PlayMode::update(float elapsed) {
 		if (space.pressed) {
 			ship->position = glm::vec3(.0f, .0f, 8.0f);
 			ship->rotation = glm::angleAxis(.0f, glm::vec3(.0f));
+			lose = false;
 		}
 
 		ship_move.y = -1.0f;
@@ -314,6 +315,9 @@ void PlayMode::update(float elapsed) {
 			ast->position.y += ast_move.y;
 			ast->position.z += ast_move.z;
 		}
+		if (glm::distance(ast->position, ship->position) < 2.0f) {
+			lose = true;
+		}
 	}
 
 
@@ -359,15 +363,17 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
-		/*constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));*/
+		if (lose) {
+			constexpr float H = 0.09f;
+			lines.draw_text("     YOU LOSE \n press space to restart",
+				glm::vec3(-aspect + 0.5f * H, -1.0 + 0.5f * H, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			float ofs = 2.0f / drawable_size.y;
+			lines.draw_text("     YOU LOSE \n press space to restart",
+				glm::vec3(-aspect + 0.5f * H + ofs, -1.0 + +0.5f * H + ofs, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		}
 	}
 }
