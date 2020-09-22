@@ -12,54 +12,6 @@
 
 #include <random>
 
-//GLuint hexapod_meshes_for_lit_color_texture_program = 0;
-//Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-//	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
-//	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
-//	return ret;
-//});
-//
-//Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
-//	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
-//		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
-//
-//		scene.drawables.emplace_back(transform);
-//		Scene::Drawable &drawable = scene.drawables.back();
-//
-//		drawable.pipeline = lit_color_texture_program_pipeline;
-//
-//		drawable.pipeline.vao = hexapod_meshes_for_lit_color_texture_program;
-//		drawable.pipeline.type = mesh.type;
-//		drawable.pipeline.start = mesh.start;
-//		drawable.pipeline.count = mesh.count;
-//
-//	});
-//});
-
-
-GLuint city_meshes_for_lit_color_texture_program = 0;
-Load< MeshBuffer > city_meshes(LoadTagDefault, []() -> MeshBuffer const* {
-	MeshBuffer const* ret = new MeshBuffer(data_path("city.pnct"));
-	city_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
-	return ret;
-});
-
-Load< Scene > city_scene(LoadTagDefault, []() -> Scene const* {
-	return new Scene(data_path("city.scene"), [&](Scene& scene, Scene::Transform* transform, std::string const& mesh_name) {
-		Mesh const& mesh = city_meshes->lookup(mesh_name);
-
-		scene.drawables.emplace_back(transform);
-		Scene::Drawable& drawable = scene.drawables.back();
-
-		drawable.pipeline = lit_color_texture_program_pipeline;
-
-		drawable.pipeline.vao = city_meshes_for_lit_color_texture_program;
-		drawable.pipeline.type = mesh.type;
-		drawable.pipeline.start = mesh.start;
-		drawable.pipeline.count = mesh.count;
-		});
-	});
-
 GLuint space_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > space_meshes(LoadTagDefault, []() -> MeshBuffer const* {
 	MeshBuffer const* ret = new MeshBuffer(data_path("space.pnct"));
@@ -86,23 +38,8 @@ Load< Scene > space_scene(LoadTagDefault, []() -> Scene const* {
 
 
 PlayMode::PlayMode() : scene(*space_scene) {//scene(*hexapod_scene) {
-	//get pointers to leg for convenience:
-	/*for (auto &transform : scene.transforms) {
-		if (transform.name == "Hip.FL") hip = &transform;
-		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	}
-	if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
-
-	hip_base_rotation = hip->rotation;
-	upper_leg_base_rotation = upper_leg->rotation;
-	lower_leg_base_rotation = lower_leg->rotation;*/
 
 	for (auto& transform : scene.transforms) {
-		std::cout << " LOADING...\n\n\n\n\n\n\nNOW!\n";
-		std::cout << transform.name.substr(0,8) << "\n";
 		if (transform.name == "Ship") { ship = &transform; }
 		else if (transform.name.substr(0, 8) == "Asteroid") { asteroids.emplace_back(&transform); }
 	}
@@ -203,10 +140,6 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 
-	//slowly rotates through [0,1):
-	wobble += elapsed / 10.0f;
-	wobble -= std::floor(wobble);
-
 	//move camera:
 	{
 
@@ -247,36 +180,28 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 ship_up = ship_frame[1];
 		glm::vec3 ship_forward = -ship_frame[2];
 		ship->position += ship_move.x * ship_right + ship_move.y * ship_forward + ship_move.z * ship_up;
-		std::cout << ship->position.x << " +++ " << ship->position.y << " --- " << ship->position.z << "\n";
-		std::cout << glm::acos(ship->position.x / glm::length(glm::vec2(ship->position.x, ship->position.z))) << "\n";
+		
+		//math is hard
 		float hpi = 1.570796f;
 		float x_theta = glm::acos(ship->position.y / glm::length(glm::vec2(ship->position.y, ship->position.z)));
 		if (ship->position.z < 0) {
 			x_theta = std::abs(x_theta - 3.1415926f) + 3.1415926f;
 		}
 		float y_theta = glm::acos(ship->position.x / glm::length(glm::vec2(ship->position.x, ship->position.z))) - hpi;
-		/*if (ship->position.z < 0) {
-			y_theta = std::abs(y_theta - 3.1415926f) + 3.1415926f;
-		}*/
+		
 		float z_theta = glm::acos(ship->position.y / glm::length(glm::vec2(ship->position.x, ship->position.y)));
 		if (ship->position.x < 0) {
 			z_theta = std::abs(z_theta - 3.1415926f) + 3.1415926f;
 		}
 		
-		//std::cout << x_theta << "xtheta\n";
-		//std::cout << y_theta << "ytheta\n";
+
 		//Following math based on https://www.gamedev.net/forums/topic/625169-how-to-use-a-quaternion-as-a-camera-orientation/
 		glm::quat x_quat = glm::angleAxis(x_theta, glm::vec3(1.0f, .0f, .0f));
 		glm::quat y_quat = glm::angleAxis(y_theta, glm::vec3(.0f, 1.0f, .0f));
 		glm::quat z_quat = glm::angleAxis(rot.z * elapsed * PlayerSpeed, glm::vec3(.0f, .0f, 1.0f));
-		//if (rot.z != 0) { std::cout << rot.z << "rotating manually!!\n"; }
+	
 		ship->rotation = x_quat * y_quat * z_quat;
-		//ship->position += glm::vec3(rMag * glm::cos(theta) * elapsed * PlayerSpeed, rMag * glm::sin(theta) * elapsed * PlayerSpeed, .0f);
-		std::cout << ship->rotation.w <<" rotate\n";
-		/*if (ship->rotation.w == 1 && ship->position.y == 0) {
-			ship->position.y += 2.0f;
-			std::cout << "HIT\n";
-		}*/
+
 		ship->position = glm::normalize(ship->position) * rMag;
 
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
@@ -286,40 +211,40 @@ void PlayMode::update(float elapsed) {
 
 		camera->transform->position = ship->position + 5.0f * ship_forward + 7.0f * ship_up;
 		camera->transform->rotation = x_quat * y_quat * glm::angleAxis(2.94f, glm::vec3(-1.0f, .0f, .0f)) * glm::angleAxis(3.14f, glm::vec3(.0f, .0f, 1.0f));
+		//Uncomment below and comment above to have exterior camera view
 		//camera->transform->position += cam_move.x * right + cam_move.y * forward;// +cam_move.z * up;
 		
 	}
 
 	//Asteroids
-	static std::mt19937 mt;
-	constexpr float AstSpeed = 25.0f;
-	std::cout << asteroids.size() << "  ASTEROIDS SIZE\n";
-	for (Scene::Transform *ast : asteroids) {
-		
-		if (glm::distance(ast->position,glm::vec3(0.0f)) < 5.0f) {
-			std::cout << "ASTEROIDS!\n";
-			//spawns randomly between 50 and 100 units away
-			float x_val = (mt() / (float)(mt.max())) - .5f;
-			float y_val = (mt() / (float)(mt.max())) - .5f;
-			float z_val = (mt() / (float)(mt.max())) - .5f;
-			ast->position = glm::normalize(glm::vec3(x_val, y_val, z_val)) * ((mt() / (float)(mt.max())) * 50.0f + 50.0f);
-		}
-		else {
+	{
+		static std::mt19937 mt;
+		constexpr float AstSpeed = 25.0f;
+		for (Scene::Transform* ast : asteroids) {
 
-			glm::vec3 ast_move = -1.0f * ast->position;
-			
+			if (glm::distance(ast->position, glm::vec3(0.0f)) < 5.0f) {
+				//spawns randomly between 50 and 100 units away
+				float x_val = (mt() / (float)(mt.max())) - .5f;
+				float y_val = (mt() / (float)(mt.max())) - .5f;
+				float z_val = (mt() / (float)(mt.max())) - .5f;
+				ast->position = glm::normalize(glm::vec3(x_val, y_val, z_val)) * ((mt() / (float)(mt.max())) * 50.0f + 50.0f);
+			}
+			else {
 
-			if (ast_move != glm::vec3(0.0f)) ast_move = glm::normalize(ast_move) * AstSpeed * elapsed;
+				glm::vec3 ast_move = -1.0f * ast->position;
 
-			ast->position.x += ast_move.x;
-			ast->position.y += ast_move.y;
-			ast->position.z += ast_move.z;
-		}
-		if (glm::distance(ast->position, ship->position) < 2.0f) {
-			lose = true;
+				if (ast_move != glm::vec3(0.0f)) ast_move = glm::normalize(ast_move) * AstSpeed * elapsed;
+
+				ast->position.x += ast_move.x;
+				ast->position.y += ast_move.y;
+				ast->position.z += ast_move.z;
+			}
+
+			if (glm::distance(ast->position, ship->position) < 1.5f) {
+				lose = true;
+			}
 		}
 	}
-
 
 
 	//reset button press counters:
@@ -327,14 +252,16 @@ void PlayMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+	q.downs = 0;
+	e.downs = 0;
+	space.downs = 0;
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	//update camera aspect ratio for drawable:
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 
-	//set up light type and position for lit_color_texture_program:
-	// TODO: consider using the Light(s) in the scene to do this
+	//set up light type and position for lit_color_texture_program
 	glUseProgram(lit_color_texture_program->program);
 	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
 	GL_ERRORS();
@@ -364,15 +291,15 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		if (lose) {
-			constexpr float H = 0.09f;
-			lines.draw_text("     YOU LOSE \n press space to restart",
-				glm::vec3(-aspect + 0.5f * H, -1.0 + 0.5f * H, 0.0),
-				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			constexpr float H = 0.9f;
+			lines.draw_text("     YOU LOSE",
+				glm::vec3(-aspect + 0.25f * H, -1.0 + 0.5f * H, 0.0),
+				glm::vec3(.5f * H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 			float ofs = 2.0f / drawable_size.y;
-			lines.draw_text("     YOU LOSE \n press space to restart",
-				glm::vec3(-aspect + 0.5f * H + ofs, -1.0 + +0.5f * H + ofs, 0.0),
-				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			lines.draw_text("     YOU LOSE",
+				glm::vec3(-aspect + 0.25f * H + ofs, -1.0 + +0.5f * H + ofs, 0.0),
+				glm::vec3(.5f * H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 				glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 		}
 	}
