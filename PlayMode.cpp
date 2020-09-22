@@ -233,11 +233,11 @@ void PlayMode::update(float elapsed) {
 		if (down.pressed && !up.pressed) cam_move.y =-1.0f;
 		if (!down.pressed && up.pressed) cam_move.y = 1.0f;
 		if (e.pressed) {
-			//ship_move.x = -1.0f;
+			ship_move.x = -1.0f;
 			rot.z = 1.0f;
 		}
 		if (q.pressed) {
-			//ship_move.x = 1.0f;
+			ship_move.x = 1.0f;
 			rot.z = -1.0f;
 		}
 		if (space.pressed) {
@@ -246,9 +246,7 @@ void PlayMode::update(float elapsed) {
 		}
 
 		ship_move.y = -1.0f;
-		//rot.x = -1.0f;
-		//float theta = .0f;
-		//rot = glm::vec3(glm::cos(theta), glm::sin(theta), 0.0f);
+
 
 		//make it so that moving diagonally doesn't go faster:
 		if (cam_move != glm::vec3(0.0f)) cam_move = glm::normalize(cam_move) * PlayerSpeed * elapsed;
@@ -262,7 +260,6 @@ void PlayMode::update(float elapsed) {
 		std::cout << ship->position.x << " +++ " << ship->position.y << " --- " << ship->position.z << "\n";
 		std::cout << glm::acos(ship->position.x / glm::length(glm::vec2(ship->position.x, ship->position.z))) << "\n";
 		float hpi = 1.570796f;
-		std::cout << "FUCK\n";
 		float x_theta = glm::acos(ship->position.y / glm::length(glm::vec2(ship->position.y, ship->position.z)));
 		if (ship->position.z < 0) {
 			x_theta = std::abs(x_theta - 3.1415926f) + 3.1415926f;
@@ -276,20 +273,20 @@ void PlayMode::update(float elapsed) {
 			z_theta = std::abs(z_theta - 3.1415926f) + 3.1415926f;
 		}
 		
-		std::cout << x_theta << "xtheta\n";
-		std::cout << y_theta << "ytheta\n";
+		//std::cout << x_theta << "xtheta\n";
+		//std::cout << y_theta << "ytheta\n";
 		//Following math based on https://www.gamedev.net/forums/topic/625169-how-to-use-a-quaternion-as-a-camera-orientation/
 		glm::quat x_quat = glm::angleAxis(x_theta, glm::vec3(1.0f, .0f, .0f));
 		glm::quat y_quat = glm::angleAxis(y_theta, glm::vec3(.0f, 1.0f, .0f));
 		glm::quat z_quat = glm::angleAxis(rot.z * elapsed * PlayerSpeed, glm::vec3(.0f, .0f, 1.0f));
-		if (rot.z != 0) { std::cout << rot.z << "rotating manually!!\n"; }
+		//if (rot.z != 0) { std::cout << rot.z << "rotating manually!!\n"; }
 		ship->rotation = x_quat * y_quat * z_quat;
 		//ship->position += glm::vec3(rMag * glm::cos(theta) * elapsed * PlayerSpeed, rMag * glm::sin(theta) * elapsed * PlayerSpeed, .0f);
 		std::cout << ship->rotation.w <<" rotate\n";
-		if (ship->rotation.w == 1 && ship->position.y == 0) {
+		/*if (ship->rotation.w == 1 && ship->position.y == 0) {
 			ship->position.y += 2.0f;
 			std::cout << "HIT\n";
-		}
+		}*/
 		ship->position = glm::normalize(ship->position) * rMag;
 
 		glm::mat4x3 frame = camera->transform->make_local_to_parent();
@@ -297,8 +294,9 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
 
-		//camera->transform->position = ship->position + glm::vec3(.0f, -1.0f, 1.0f);
-		camera->transform->position += cam_move.x * right + cam_move.y * forward;// +cam_move.z * up;
+		camera->transform->position = ship->position + 3.0f * ship_forward + 6.0f * ship_up;// +glm::vec3(.0f, -1.0f, 1.0f);
+		camera->transform->rotation = x_quat * y_quat * glm::angleAxis(2.84f, glm::vec3(-1.0f, .0f, .0f)) * glm::angleAxis(3.14f, glm::vec3(.0f, .0f, 1.0f));
+		//camera->transform->position += cam_move.x * right + cam_move.y * forward;// +cam_move.z * up;
 		
 	}
 
@@ -324,7 +322,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 	glUseProgram(0);
 
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(.1f, 0.1f, 0.2f, 1.0f);
 	glClearDepth(1.0f); //1.0 is actually the default value to clear the depth buffer to, but FYI you can change it.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
