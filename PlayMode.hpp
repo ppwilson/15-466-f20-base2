@@ -30,13 +30,8 @@ struct PlayMode : Mode {
 	Scene::Transform *ship = nullptr;
 	std::vector <Scene::Transform*> asteroids;
 
-	//hexapod leg to wobble:
-	Scene::Transform *hip = nullptr;
-	Scene::Transform *upper_leg = nullptr;
-	Scene::Transform *lower_leg = nullptr;
-	glm::quat hip_base_rotation;
-	glm::quat upper_leg_base_rotation;
-	glm::quat lower_leg_base_rotation;
+	bool lose = false;
+
 	float wobble = 0.0f;
 	
 	//camera:

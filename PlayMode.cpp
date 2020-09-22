@@ -101,11 +101,13 @@ PlayMode::PlayMode() : scene(*space_scene) {//scene(*hexapod_scene) {
 	lower_leg_base_rotation = lower_leg->rotation;*/
 
 	for (auto& transform : scene.transforms) {
+		std::cout << " LOADING...\n\n\n\n\n\n\nNOW!\n";
+		std::cout << transform.name.substr(0,8) << "\n";
 		if (transform.name == "Ship") { ship = &transform; }
-		else if (transform.name.substr(0, 7) == "Asteroid") { asteroids.push_back(&transform); }
+		else if (transform.name.substr(0, 8) == "Asteroid") { asteroids.emplace_back(&transform); }
 	}
 	if (ship == nullptr) throw std::runtime_error("Ship not found.");
-	if (asteroids.empty() != 1) throw std::runtime_error("Not All Asteroids not found.");
+	if (asteroids.empty()) throw std::runtime_error("Not All Asteroids not found.");
 	
 
 	//get pointer to camera for convenience:
@@ -205,19 +207,6 @@ void PlayMode::update(float elapsed) {
 	wobble += elapsed / 10.0f;
 	wobble -= std::floor(wobble);
 
-	/*hip->rotation = hip_base_rotation * glm::angleAxis(
-		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-	upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-		glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);*/
-
 	//move camera:
 	{
 
@@ -294,11 +283,40 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 up = frame[1];
 		glm::vec3 forward = -frame[2];
 
-		camera->transform->position = ship->position + 3.0f * ship_forward + 6.0f * ship_up;// +glm::vec3(.0f, -1.0f, 1.0f);
-		camera->transform->rotation = x_quat * y_quat * glm::angleAxis(2.84f, glm::vec3(-1.0f, .0f, .0f)) * glm::angleAxis(3.14f, glm::vec3(.0f, .0f, 1.0f));
+		camera->transform->position = ship->position + 5.0f * ship_forward + 7.0f * ship_up;
+		camera->transform->rotation = x_quat * y_quat * glm::angleAxis(2.94f, glm::vec3(-1.0f, .0f, .0f)) * glm::angleAxis(3.14f, glm::vec3(.0f, .0f, 1.0f));
 		//camera->transform->position += cam_move.x * right + cam_move.y * forward;// +cam_move.z * up;
 		
 	}
+
+	//Asteroids
+	static std::mt19937 mt;
+	constexpr float AstSpeed = 25.0f;
+	std::cout << asteroids.size() << "  ASTEROIDS SIZE\n";
+	for (Scene::Transform *ast : asteroids) {
+		
+		if (glm::distance(ast->position,glm::vec3(0.0f)) < 5.0f) {
+			std::cout << "ASTEROIDS!\n";
+			//spawns randomly between 50 and 100 units away
+			float x_val = (mt() / (float)(mt.max())) - .5f;
+			float y_val = (mt() / (float)(mt.max())) - .5f;
+			float z_val = (mt() / (float)(mt.max())) - .5f;
+			ast->position = glm::normalize(glm::vec3(x_val, y_val, z_val)) * ((mt() / (float)(mt.max())) * 50.0f + 50.0f);
+		}
+		else {
+
+			glm::vec3 ast_move = -1.0f * ast->position;
+			
+
+			if (ast_move != glm::vec3(0.0f)) ast_move = glm::normalize(ast_move) * AstSpeed * elapsed;
+
+			ast->position.x += ast_move.x;
+			ast->position.y += ast_move.y;
+			ast->position.z += ast_move.z;
+		}
+	}
+
+
 
 	//reset button press counters:
 	left.downs = 0;
@@ -341,7 +359,7 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
-		constexpr float H = 0.09f;
+		/*constexpr float H = 0.09f;
 		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
@@ -350,6 +368,6 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+			glm::u8vec4(0xff, 0xff, 0xff, 0x00));*/
 	}
 }
